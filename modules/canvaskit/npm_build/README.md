@@ -1,3 +1,24 @@
+# @ludafa/canvaskit
+
+**Unofficial fork.** This package is built from [ludafa/skia](https://github.com/ludafa/skia), a fork of
+Skia, and is not published or supported by Google. The official package is
+[canvaskit-wasm](https://www.npmjs.com/package/canvaskit-wasm).
+
+Each version is CanvasKit at an upstream release plus the APIs below. The version says which:
+`0.42.0-glyph-path` is CanvasKit 0.42.0 with the `glyph-path` changes. Only the default build
+(`bin/canvaskit.js`, `bin/canvaskit.wasm`) is included; `full` and `profiling` are not.
+
+## Added in this fork
+
+- `Font.getGlyphPath(glyphID)`: the outline of one glyph as a `Path`, or `null`.
+- `Font.getGlyphPathAtSize(glyphID)`: the same, built at the font's own size instead of Skia's 64 px.
+- `Font.getGlyphsPath(glyphs, positions)`: one `Path` with every glyph's outline at its position.
+- `Typeface.getUnitsPerEm()`: the font's units per em.
+
+The rest of this README is upstream's.
+
+---
+
 A WASM version of Skia's Canvas API.
 
 See https://skia.org/user/modules/canvaskit for more background information.
