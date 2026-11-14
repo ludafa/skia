@@ -4,7 +4,9 @@
 import re
 import sys
 
-KEEP = ['brotli', 'emsdk', 'freetype', 'harfbuzz', 'icu', 'libjpeg-turbo', 'libpng', 'libwebp', 'wuffs', 'zlib']
+# partition_alloc: since 0.42 every Skia target uses its raw_ptr headers when building with clang.
+KEEP = ['brotli', 'emsdk', 'freetype', 'harfbuzz', 'icu', 'libjpeg-turbo', 'libpng', 'libwebp',
+        'partition_alloc', 'wuffs', 'zlib']
 
 src = open(sys.argv[1], encoding='utf-8').read()
 pattern = re.compile(r'^\s*"third_party/externals/(%s)"\s*:.*$' % '|'.join(map(re.escape, KEEP)), re.M)
