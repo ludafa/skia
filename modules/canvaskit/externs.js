@@ -439,6 +439,7 @@ var CanvasKit = {
 
   Font: {
     // public API (from C++ bindings)
+    getGlyphPath: function() {},
     getMetrics: function() {},
     getScaleX: function() {},
     getSize: function() {},
@@ -459,10 +460,12 @@ var CanvasKit = {
       getGlyphIDs: function() {},
       getGlyphWidths: function() {},
       getGlyphIntercepts: function() {},
+      getGlyphsPath: function() {},
     },
 
     // private API (from C++ bindings)
     _getGlyphIDs: function() {},
+    _getGlyphsPath: function() {},
     _getGlyphIntercepts: function() {},
     _getGlyphWidthBounds: function() {},
   },

@@ -110,6 +110,19 @@ CanvasKit._extraInitializations.push(function() {
     return rv;
   };
 
+  // One path holding every glyph's outline, each moved to its (x, y) in positions.
+  CanvasKit.Font.prototype.getGlyphsPath = function(glyphs, positions) {
+    if (!(glyphs.length*2 <= positions.length)) {
+        throw 'Not enough positions for the array of gyphs';
+    }
+    var glyphPtr = copy1dArray(glyphs, 'HEAPU16');
+    var posPtr = copy1dArray(positions, 'HEAPF32');
+    var path = this._getGlyphsPath(glyphPtr, glyphs.length, posPtr);
+    freeArraysThatAreNotMallocedByUsers(posPtr, positions);
+    freeArraysThatAreNotMallocedByUsers(glyphPtr, glyphs);
+    return path;
+  };
+
   // arguments should all be arrayBuffers or be an array of arrayBuffers.
   CanvasKit.FontMgr.FromData = function() {
     if (!arguments.length) {

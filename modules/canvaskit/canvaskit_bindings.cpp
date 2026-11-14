@@ -66,6 +66,8 @@
 #include "src/core/SkPathPriv.h"
 #include "src/core/SkPathRaw.h"
 #include "src/core/SkResourceCache.h"
+#include "src/core/SkGlyph.h"
+#include "src/core/SkStrikeSpec.h"
 #include "src/image/SkImage_Base.h"
 
 #include <emscripten.h>
@@ -1834,6 +1836,46 @@ EMSCRIPTEN_BINDINGS(Skia) {
                                                     {glyphIDs, glyphIDs ? expectedCodePoints : 0});
                           return actualCodePoints;
                       }))
+            .function("getGlyphPathAtSize",
+                      optional_override([](SkFont& self, SkGlyphID glyphID) -> SkPathOrNull {
+                          SkFont font(self);
+                          font.setEmbeddedBitmaps(false);
+                          font.setForceAutoHinting(false);
+                          font.setSubpixel(true);
+                          font.setHinting(SkFontHinting::kNone);
+                          if (font.getEdging() == SkFont::Edging::kSubpixelAntiAlias) {
+                              font.setEdging(SkFont::Edging::kAntiAlias);
+                          }
+                          SkStrikeSpec spec = SkStrikeSpec::MakeWithNoDevice(font);
+                          SkBulkGlyphMetricsAndPaths paths{spec};
+                          SkSpan<const SkGlyph*> glyphs = paths.glyphs({&glyphID, 1});
+                          if (glyphs.size() == 1 && glyphs[0] && glyphs[0]->path()) {
+                              return emscripten::val(SkPath(*glyphs[0]->path()));
+                          }
+                          return emscripten::val::null();
+                      }))
+            .function("getGlyphPath",
+                      optional_override([](SkFont& self, SkGlyphID glyphID) -> SkPathOrNull {
+                          if (auto path = self.getPath(glyphID)) {
+                              return emscripten::val(path.value());
+                          }
+                          return emscripten::val::null();
+                      }))
+            .function("_getGlyphsPath",
+                      optional_override([](SkFont& self,
+                                           WASMPointerU16 gPtr,
+                                           int numGlyphs,
+                                           WASMPointerF32 pPtr) -> SkPath {
+                          const SkGlyphID* glyphs = reinterpret_cast<const SkGlyphID*>(gPtr);
+                          const SkPoint* pos = reinterpret_cast<const SkPoint*>(pPtr);
+                          SkPathBuilder builder;
+                          for (int i = 0; i < numGlyphs; ++i) {
+                              if (auto path = self.getPath(glyphs[i])) {
+                                  builder.addPath(*path, pos[i].fX, pos[i].fY);
+                              }
+                          }
+                          return builder.detach();
+                      }))
             .function("getMetrics", optional_override([](SkFont& self) -> JSObject {
                           SkFontMetrics fm;
                           self.getMetrics(&fm);
@@ -2994,6 +3036,8 @@ EMSCRIPTEN_BINDINGS(Skia) {
 
     class_<SkTypeface>("Typeface")
             .smart_ptr<sk_sp<SkTypeface>>("sk_sp<Typeface>")
+            .function("getUnitsPerEm",
+                      optional_override([](SkTypeface& self) -> int { return self.getUnitsPerEm(); }))
             .class_function("GetDefault",
                             optional_override([]() -> sk_sp<SkTypeface> {
 #if defined(CK_EMBED_FONT)

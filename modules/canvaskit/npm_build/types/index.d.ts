@@ -1993,6 +1993,29 @@ export interface Font extends EmbindObject<"Font"> {
                        top: number, bottom: number): Float32Array;
 
     /**
+     * Returns the outline of one glyph at this font's size. A glyph with no contours (a space)
+     * gives an empty Path; null means Skia cannot make an outline (e.g. a bitmap-only glyph).
+     * Skia builds it at a canonical 64 px and scales it, so points are precise to 1/4096 em.
+     * @param glyphID
+     */
+    getGlyphPath(glyphID: number): Path | null;
+
+    /**
+     * Like getGlyphPath, but the outline is built at this font's own size instead of
+     * Skia's canonical 64 px. Hinting is off and subpixel positioning on.
+     * @param glyphID
+     */
+    getGlyphPathAtSize(glyphID: number): Path | null;
+
+    /**
+     * Returns one path holding the outline of every glyph, each moved to its position.
+     * Glyphs Skia cannot make an outline for are skipped.
+     * @param glyphs
+     * @param positions     x,y coordinates (2 per glyph) for each glyph
+     */
+    getGlyphsPath(glyphs: InputGlyphIDArray, positions: InputFlattenedPointArray): Path;
+
+    /**
      * Returns text scale on x-axis. Default value is 1.
      */
     getScaleX(): number;
@@ -3160,6 +3183,11 @@ export interface Typeface extends EmbindObject<"Typeface"> {
      * Return the typeface family name.
      */
     getFamilyName(): string;
+
+    /**
+     * Returns the font's units per em (the head table's unitsPerEm), or 0 if it has none.
+     */
+    getUnitsPerEm(): number;
 }
 
 /**
