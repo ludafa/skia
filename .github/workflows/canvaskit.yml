@@ -1,0 +1,97 @@
+# Builds CanvasKit with this fork's changes and publishes it to npm as @ludafa/canvaskit.
+# A push to a feat/** branch only builds and uploads the package as an artifact.
+# A tag named after the package version (e.g. 0.42.0-glyph-path) builds and publishes it.
+name: canvaskit
+
+on:
+  push:
+    branches: ['feat/**']
+    tags: ['[0-9]+.[0-9]+.[0-9]+-*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canvaskit-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the dependencies CanvasKit compiles, gn and emsdk
+        run: |
+          python3 .github/canvaskit/trim-deps.py DEPS > DEPS.canvaskit
+          cat DEPS.canvaskit
+          GIT_SYNC_DEPS_PATH="$PWD/DEPS.canvaskit" GIT_SYNC_DEPS_QUIET=1 python3 tools/git-sync-deps
+
+      - name: Build (same flags as the default build in modules/canvaskit/Makefile's npm target)
+        working-directory: modules/canvaskit
+        run: >-
+          ./compile.sh release no_skottie no_sksl_trace no_alias_font no_effects_deserialization
+          no_encode_jpeg no_encode_webp legacy_draw_vertices no_embedded_font
+
+      - name: Assemble the package
+        working-directory: modules/canvaskit
+        run: |
+          mkdir -p npm_build/bin
+          cp ../../out/canvaskit_wasm/canvaskit.js ../../out/canvaskit_wasm/canvaskit.wasm npm_build/bin/
+          cp CHANGELOG.md npm_build/
+          sha256sum npm_build/bin/*
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Smoke test
+        run: node .github/canvaskit/smoke-test.cjs modules/canvaskit/npm_build resources/fonts/Roboto-Regular.ttf
+
+      - name: Check the tag is the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(node -p "require('./modules/canvaskit/npm_build/package.json').version")
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - name: Pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/pkg"
+          cd modules/canvaskit/npm_build
+          npm pack --pack-destination "$RUNNER_TEMP/pkg"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: canvaskit-package
+          path: ${{ runner.temp }}/pkg/*.tgz
+          if-no-files-found: error
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing (OIDC); no npm token is stored anywhere
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: npm 11.5.1 or later (needed for trusted publishing)
+        run: npm install -g npm@^11.5.1 && npm --version
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: canvaskit-package
+          path: pkg
+
+      - name: Publish
+        run: npm publish pkg/*.tgz --access public --tag latest
