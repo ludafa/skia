@@ -5,7 +5,9 @@ Skia, and is not published or supported by Google. The official package is
 [canvaskit-wasm](https://www.npmjs.com/package/canvaskit-wasm).
 
 Each version is CanvasKit at an upstream release plus the APIs below. The version says which:
-`0.42.0-glyph-path` is CanvasKit 0.42.0 with the `glyph-path` changes. Only the default build
+`0.42.0-glyph-path` is CanvasKit 0.42.0 with the `glyph-path` changes, and `0.42.0-glyph-path.1`,
+`.2`, ... are later builds of the same changes (npm never lets a version be published twice).
+Only the default build
 (`bin/canvaskit.js`, `bin/canvaskit.wasm`) is included; `full` and `profiling` are not.
 
 ## Added in this fork

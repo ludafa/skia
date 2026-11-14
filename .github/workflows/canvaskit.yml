@@ -1,6 +1,7 @@
 # Builds CanvasKit with this fork's changes and publishes it to npm as @ludafa/canvaskit.
 # A push to a feat/** branch only builds and uploads the package as an artifact.
-# A tag named after the package version (e.g. 0.42.0-glyph-path) builds and publishes it.
+# A tag named after the package version (e.g. 0.42.0-glyph-path, then 0.42.0-glyph-path.1, .2, ...
+# for rebuilds, since npm never reuses a version) builds and publishes it.
 name: canvaskit
 
 on:
