@@ -95,4 +95,4 @@ jobs:
           path: pkg
 
       - name: Publish
-        run: npm publish pkg/*.tgz --access public --tag latest
+        run: npm publish ./pkg/*.tgz --access public --tag latest
